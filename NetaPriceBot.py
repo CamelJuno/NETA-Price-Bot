@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*- 
 
-#Coded by CamelJuno 🐪#7465
+#By CamelJuno 🐪
 
 import discord
 import requests
@@ -10,35 +10,23 @@ import json
 import base64
 import string
 import time
-from flask import Flask
-from threading import Thread 
-
-app = Flask('')
-
-@app.route('/')
-def home():
-  return 'Camel is here'
-
-def run():
-  app.run(host='0.0.0.0',port=8000)
-
-def keep_alive():
-  t = Thread(target=run)
-  t.start()
 
 client = discord.Client()
-def getJUNO2UST():
+
+def getJUNOGecko():
   headers = {
-    'Host': 'rpc-juno.itastakers.com',
-    'Content-Type': 'application/json',
+    'Host': 'api.coingecko.com',
+    'Accept': '*/*'
   }
-  jsonData = {"jsonrpc":"2.0","id":genId(),"method":"abci_query","params":{"path":"/cosmwasm.wasm.v1.Query/SmartContractState","data":"0a3f6a756e6f3168756533646e72746766396c793266726e6e7666387a3575376532323463746334686b37776b733278756d65753361726a3672733976677a656312377b22746f6b656e315f666f725f746f6b656e325f7072696365223a7b22746f6b656e315f616d6f756e74223a2231303030303030227d7d","prove":False}}
-  a = requests.post('https://rpc-juno.itastakers.com/',headers=headers,json=jsonData,timeout=10)
+  a = requests.get('https://api.coingecko.com/api/v3/coins/markets?vs_currency=usd&ids=juno-network',headers=headers,timeout=10)
   if a.status_code == 200:
-    a = round(float(base64.b64decode(json.loads(a.text)['result']['response']['value']).split('"token2_amount":"'.encode('utf-8'),1)[1].split('"}'.encode('utf-8'),1)[0])/1000000,2)
-    return a
+    z = json.loads(a.text)[0]['current_price']
+    if z == None:
+      getJUNOGecko()
+    else:
+      return z
   else:
-    getJUNO2UST()
+    getJUNOGecko()
 
 def getNETA2JUNO():
   headers = {
@@ -66,18 +54,14 @@ async def on_ready():
   member = guild.get_member(memberID)
   while(True):
     try:
-      JUNO2UST = getJUNO2UST()
-      time.sleep(1)
-      NETA2JUNO = getNETA2JUNO()
-      await member.edit(nick="NETA $"+str(round(JUNO2UST*NETA2JUNO,2)))
+      NETAPrice = round(getJUNOGecko()*getNETA2JUNO(),2)
+      await member.edit(nick="NETA $"+str(NETAPrice))
       time.sleep(1)
       await client.change_presence(activity=discord.Activity(type=discord.ActivityType.watching, name=str(NETA2JUNO)+" JUNO"))
       print(str(JUNO2UST*NETA2JUNO))
       time.sleep(60)
     except:
       continue
-
-keep_alive()
 
 guildID = 0
 memberID = 0
